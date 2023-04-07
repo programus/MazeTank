@@ -23,8 +23,14 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void HideWall();
+
 private:
 	UPROPERTY(VisibleAnywhere)
-		UStaticMeshComponent* MeshComponent;
+		USceneComponent* RootComp;
+	UPROPERTY(VisibleAnywhere)
+		UStaticMeshComponent* FloorComp;
+	UPROPERTY(VisibleAnywhere)
+		UStaticMeshComponent* WallComp;
 
 };

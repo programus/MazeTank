@@ -29,8 +29,9 @@ void ATower::Tick(float DeltaTime)
 	}
 	CleanDisappearedProjectiles();
 	bShootReady = bNeedRotateTurret && bTargetVisible && Projectiles.Num() < MaxProjectileNum && bWeaponReady;
+	bool bShootReadyBk = bShootReady;
 	Super::Tick(DeltaTime);
-	if (bShootReady)
+	if (bShootReadyBk)
 	{
 		RecoverWeapon();
 	}
@@ -44,7 +45,7 @@ void ATower::Destruct()
 
 void ATower::RecoverWeapon()
 {
-	SetWeaponReady(false);
+	bWeaponReady = false;
 	FTimerHandle TimerHandle;
 	FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this, &ATower::SetWeaponReady, true);
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, WeaponRecoverTime, false);

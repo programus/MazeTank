@@ -7,6 +7,8 @@
 #include "ToonTankGameModeBase.generated.h"
 
 class ABasePawn;
+class ATower;
+class AWall;
 class UUserWidget;
 class ATankPlayerController;
 class UStartGameWidget;
@@ -44,6 +46,26 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Game Settings")
 		TSubclassOf<UUserWidget> EndGameWidgetClass;
 
+	UPROPERTY(EditAnywhere, Category = "Arena")
+		TSubclassOf<AWall> EmptyArea;
+	UPROPERTY(EditAnywhere, Category = "Arena")
+		TSubclassOf<AWall> EdgeWall;
+	UPROPERTY(EditAnywhere, Category = "Arena")
+		TSubclassOf<AWall> CornerWall;
+	UPROPERTY(EditAnywhere, Category = "Arena")
+		float BlockSize = 900;
+	UPROPERTY(EditAnywhere, Category = "Arena")
+		FIntVector2 ArenaSize = FIntVector2(3, 2);
+	UPROPERTY(EditAnywhere, Category = "Arena")
+		FIntVector2 ArenaSizeIncrease = FIntVector2(2, 1);
+	UPROPERTY(EditAnywhere, Category = "Arena")
+		float EnemyRate = 0.5;
+	UPROPERTY(EditAnywhere, Category = "Arena")
+		TSubclassOf<ATower> EnemyClass;
+
+	UPROPERTY(VisibleAnywhere)
+		int32 CurrentLevel = 0;
+
 	FTimerHandle TimerHandle;
 	UPROPERTY()
 	UStartGameWidget* StartGameWidget;
@@ -57,4 +79,6 @@ private:
 
 	void EndGame(bool bWin);
 	void EndGameCountDown(UEndGameWidget* Widget);
+
+	void BuildArena();
 };

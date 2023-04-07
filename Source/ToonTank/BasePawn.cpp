@@ -32,6 +32,7 @@ void ABasePawn::BeginPlay()
 
 void ABasePawn::Shoot()
 {
+	UE_LOG(LogTemp, Warning, TEXT("%s shoot!!"), *GetActorNameOrLabel());
 	AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentTransform());
 	Projectile->SetOwner(this);
 	Projectile->SetSpeed(ProjectileInitSpeed, ProjectileMaxSpeed);
