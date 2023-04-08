@@ -4,7 +4,8 @@
 #include "InputControlComponent.h"
 #include "EnhancedInput/Public/EnhancedInputSubsystems.h"
 #include "EnhancedInput/Public/EnhancedInputComponent.h"
-#include "BasePawn.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Tank.h"
 
 // Sets default values for this component's properties
 UInputControlComponent::UInputControlComponent()
@@ -22,7 +23,8 @@ void UInputControlComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-    Owner = Cast<ABasePawn>(GetOwner());
+    Owner = Cast<ATank>(GetOwner());
+    SpringArm = Cast<USpringArmComponent>(Owner->GetComponentByClass(USpringArmComponent::StaticClass()));
 }
 
 
@@ -31,7 +33,7 @@ void UInputControlComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-    AimByMouse();
+    //AimByMouse();
 }
 
 void UInputControlComponent::BindInputMappingContext(AController* Controller)
@@ -57,6 +59,9 @@ void UInputControlComponent::BindActions(UInputComponent* PlayerInputComponent)
         EnhancedInputComp->BindAction(MoveInput, ETriggerEvent::Triggered, this, &UInputControlComponent::Move);
         EnhancedInputComp->BindAction(MoveInput, ETriggerEvent::Completed, this, &UInputControlComponent::MoveEnd);
         EnhancedInputComp->BindAction(AimInput, ETriggerEvent::Triggered, this, &UInputControlComponent::Aim);
+        EnhancedInputComp->BindAction(AimInput, ETriggerEvent::Completed, this, &UInputControlComponent::AimEnd);
+        EnhancedInputComp->BindAction(AutoAimInput, ETriggerEvent::Started, this, &UInputControlComponent::AutoAim);
+        EnhancedInputComp->BindAction(AutoAimInput, ETriggerEvent::Completed, this, &UInputControlComponent::AutoAimEnd);
         EnhancedInputComp->BindAction(ShootInput, ETriggerEvent::Started, this, &UInputControlComponent::Shoot);
     }
 }
@@ -73,6 +78,39 @@ void UInputControlComponent::MoveEnd(const FInputActionValue& Value)
 
 void UInputControlComponent::Aim(const FInputActionValue& Value)
 {
+	FVector2D Input(Value.Get<FVector2D>());
+    Owner->SetAimInput(Input * RotateSpeed);
+
+    if (SpringArm)
+    {
+        float DeltaTime = GetWorld()->GetDeltaSeconds();
+        FRotator Rotation(SpringArm->GetRelativeRotation());
+        Rotation.Pitch += Input.Y * ViewSpeed * DeltaTime;
+        if (Rotation.Pitch > 0)
+        {
+            Rotation.Pitch = 0;
+        }
+        if (Rotation.Pitch < -90)
+        {
+            Rotation.Pitch = -90;
+        }
+		SpringArm->SetRelativeRotation(Rotation);
+    }
+}
+
+void UInputControlComponent::AimEnd(const FInputActionValue& Value)
+{
+    Owner->SetAimInput(FVector2D::ZeroVector);
+}
+
+void UInputControlComponent::AutoAim(const FInputActionValue& Value)
+{
+    Owner->SetAutoAim(true);
+}
+
+void UInputControlComponent::AutoAimEnd(const FInputActionValue& Value)
+{
+    Owner->SetAutoAim(false);
 }
 
 void UInputControlComponent::AimByMouse()

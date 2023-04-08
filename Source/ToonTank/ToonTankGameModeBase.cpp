@@ -180,6 +180,13 @@ void AToonTankGameModeBase::BuildArena()
 		Location.X += BlockSize;
 	}
 
+	if (EnemyCount <= 0)
+	{
+		Location.X -= BlockSize;
+		World->SpawnActor<ATower>(EnemyClass, Location, FRotator::ZeroRotator);
+		EnemyCount++;
+	}
+
 	FString MazeString(TEXT("Maze:\n\n"));
 	MazeString.Append(MazeGenerator.MazeString());
 

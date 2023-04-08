@@ -32,7 +32,6 @@ void ABasePawn::BeginPlay()
 
 void ABasePawn::Shoot()
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s shoot!!"), *GetActorNameOrLabel());
 	AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(ProjectileClass, ProjectileSpawnPoint->GetComponentTransform());
 	Projectile->SetOwner(this);
 	Projectile->SetSpeed(ProjectileInitSpeed, ProjectileMaxSpeed);
@@ -48,20 +47,38 @@ void ABasePawn::Shoot()
 
 void ABasePawn::TurnTurret()
 {
-	FVector Direction = AimTargetLocation - GetActorLocation();
-	FRotator Rotation = Direction.Rotation();
-	Rotation.Roll = 0;
-	Rotation.Pitch = 0;
-	Rotation.Yaw += TurretRotationOffset;
-	TurretComp->SetWorldRotation(
-		FMath::RInterpTo(
-			TurretComp->GetComponentRotation(), 
-			Rotation, 
-			GetWorld()->GetDeltaSeconds(),
-			TurretMaxRotateSpeed
-		), 
-		true
-	);
+	if (bRotateToTarget)
+	{
+		FVector Direction = AimTargetLocation - GetActorLocation();
+		FRotator Rotation = Direction.Rotation();
+		Rotation.Roll = 0;
+		Rotation.Pitch = 0;
+		Rotation.Yaw += TurretRotationOffset;
+		TurretComp->SetWorldRotation(
+			FMath::RInterpTo(
+				TurretComp->GetComponentRotation(),
+				Rotation,
+				GetWorld()->GetDeltaSeconds(),
+				TurretMaxRotateSpeed
+			),
+			true
+		);
+	}
+	else
+	{
+		FRotator Rotation;
+		Rotation.Yaw = AimInput.X;
+		FRotator CurrentRotation(TurretComp->GetComponentRotation());
+		TurretComp->SetWorldRotation(
+			FMath::RInterpTo(
+				TurretComp->GetComponentRotation(),
+				CurrentRotation + Rotation,
+				GetWorld()->GetDeltaSeconds(),
+				TurretMaxRotateSpeed
+			),
+			true
+		);
+	}
 }
 
 void ABasePawn::MoveBase()
@@ -107,12 +124,15 @@ void ABasePawn::MoveBase()
 			}
 			LastRotation = Rotation;
 		}
-		SetActorRotation(FMath::RInterpTo(
+		FRotator InterRotation(FMath::RInterpTo(
 			BodyRotation,
 			LastRotation,
 			DeltaTime,
 			RotateSpeed
 		));
+		FRotator PrevTurretRotation = TurretComp->GetComponentRotation();
+		SetActorRotation(InterRotation);
+		TurretComp->SetWorldRotation(PrevTurretRotation);
 	}
 }
 
@@ -192,13 +212,19 @@ void ABasePawn::SetShootReady(bool bReady)
 	bShootReady = bReady;
 }
 
+void ABasePawn::SetAimInput(FVector2D Input)
+{
+	bRotateToTarget = false;
+	AimInput = Input;
+}
+
 void ABasePawn::BuildStructure()
 {
 	BaseComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Base"));
 	BaseComp->SetupAttachment(RootComponent);
 
 	TurretComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Turret"));
-	TurretComp->SetupAttachment(BaseComp);
+	TurretComp->SetupAttachment(RootComponent);
 
 	ProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("Projectile Spawn Point"));
 	ProjectileSpawnPoint->SetupAttachment(TurretComp);
