@@ -14,7 +14,7 @@ void ATankPlayerController::SetPlayerStateEnabled(bool bState)
 	{
 		OwnerPawn->DisableInput(this);
 	}
-	bShowMouseCursor = bState;
+	//bShowMouseCursor = bState;
 
 	FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(OwnerPawn, &APawn::SetActorTickEnabled, bState);
 	GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDelegate);

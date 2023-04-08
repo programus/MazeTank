@@ -8,7 +8,8 @@
 
 class UInputAction;
 class UInputMappingContext;
-class ABasePawn;
+class ATank;
+class USpringArmComponent;
 struct FInputActionValue;
 
 
@@ -38,18 +39,29 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 		UInputAction* AimInput;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		UInputAction* AutoAimInput;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 		UInputAction* ShootInput;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		float RotateSpeed = 30;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+		float ViewSpeed = 90;
+	UPROPERTY(EditAnywhere, Category = "Camera")
+		USpringArmComponent* SpringArm;
 
 	void BindInputMappingContext(AController* Controller);
 	void BindActions(UInputComponent* PlayerInputComponent);
 
 private:
-	ABasePawn* Owner;
+	ATank* Owner;
 	APlayerController* PlayerController;
 
 	void Move(const FInputActionValue& Value);
 	void MoveEnd(const FInputActionValue& Value);
 	void Shoot(const FInputActionValue& Value);
 	void Aim(const FInputActionValue& Value);
+	void AimEnd(const FInputActionValue& Value);
+	void AutoAim(const FInputActionValue& Value);
+	void AutoAimEnd(const FInputActionValue& Value);
 	void AimByMouse();
 };

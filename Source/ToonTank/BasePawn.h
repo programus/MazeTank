@@ -47,8 +47,10 @@ protected:
 
 	FVector AimTargetLocation;
 	FVector2D MoveInput;
+	FVector2D AimInput;
 	bool bShootReady;
 	bool bNeedRotateTurret;
+	bool bRotateToTarget = true;
 
 public:	
 	// Called every frame
@@ -58,9 +60,11 @@ public:
 	void SetAimTargetLocation(const FVector Input);
 	void SetShootReady(bool bReady);
 
+	void SetAimInput(FVector2D Input);
+
 	virtual void Destruct();
 
-private:
+protected:
 	UPROPERTY(VisibleAnywhere)
 		UShapeComponent* CollisionComp;
 	UPROPERTY(VisibleAnywhere)
