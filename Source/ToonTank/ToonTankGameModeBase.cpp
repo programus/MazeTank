@@ -2,17 +2,21 @@
 
 
 #include "ToonTankGameModeBase.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "Wall.h"
 #include "BasePawn.h"
 #include "Tower.h"
+#include "GoalTrigger.h"
 #include "TankPlayerController.h"
 #include "StartGameWidget.h"
+#include "GameRunningWidget.h"
 #include "EndGameWidget.h"
 #include "MazeGenerator.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 
 #define LEVEL_KEY "Level"
+#define SCORE_KEY "Score"
 
 void AToonTankGameModeBase::KillActor(AActor* Actor)
 {
@@ -34,10 +38,8 @@ void AToonTankGameModeBase::KillActor(AActor* Actor)
 		else
 		{
 			EnemyCount--;
-			if (EnemyCount <= 0)
-			{
-				EndGame(true);
-			}
+			Score += KillScore;
+			GameRunningWidget->SetScoreValue(Score);
 		}
 	}
 }
@@ -46,11 +48,17 @@ void AToonTankGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 	PlayerPawn = Cast<ABasePawn>(UGameplayStatics::GetPlayerPawn(this, 0));
-	StartGameWidget = Cast<UStartGameWidget>(CreateWidget(GetWorld(), StartGameWidgetClass));
-	EndGameWidget = Cast<UEndGameWidget>(CreateWidget(GetWorld(), EndGameWidgetClass));
+	UWorld* World = GetWorld();
+	StartGameWidget = Cast<UStartGameWidget>(CreateWidget(World, StartGameWidgetClass));
+	GameRunningWidget = Cast<UGameRunningWidget>(CreateWidget(World, GameRunningWidgetClass));
+	EndGameWidget = Cast<UEndGameWidget>(CreateWidget(World, EndGameWidgetClass));
 
 	FString LevelOption = UGameplayStatics::ParseOption(OptionsString, TEXT(LEVEL_KEY));
+	FString ScoreOption = UGameplayStatics::ParseOption(OptionsString, TEXT(SCORE_KEY));
 	CurrentLevel = FCString::Atoi(*LevelOption);
+	Score = FCString::Atof(*ScoreOption);
+
+	UE_LOG(LogTemp, Warning, TEXT("Options: %s, Score S: %s, Score: %f"), *OptionsString, *ScoreOption, Score);
 
 	BuildArena();
 
@@ -89,21 +97,35 @@ void AToonTankGameModeBase::StartGameCountDown(ATankPlayerController* Controller
 		GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
 		UWidgetLayoutLibrary::RemoveAllWidgets(this);
 		Controller->SetPlayerStateEnabled(true);
+		GameRunningWidget->SetScoreValue(Score);
+		GameRunningWidget->AddToViewport();
 	}
 }
 
 void AToonTankGameModeBase::EndGame(bool bWin)
 {
-	FText* Texts = bWin ? WinTexts : LoseTexts;
-	EndGameWidget->SetTitle(Texts[0]);
-	EndGameWidget->SetLevelDescription(Texts[1]);
-	EndGameWidget->AddToViewport();
-	if (bWin)
+	if (bGameRunning)
 	{
-		CurrentLevel++;
+		FText* Texts = bWin ? WinTexts : LoseTexts;
+		EndGameWidget->SetScoreValue(Score);
+		if (bWin)
+		{
+			CurrentLevel++;
+			Score += CurrentLevel * LevelScoreFactor;
+			GameRunningWidget->SetScoreValue(Score);
+			EndGameWidget->SetScoreValue(Score);
+		}
+		else
+		{
+			Score = 0;
+		}
+		EndGameWidget->SetTitle(Texts[0]);
+		EndGameWidget->SetLevelDescription(Texts[1]);
+		EndGameWidget->AddToViewport();
+		FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this, &AToonTankGameModeBase::EndGameCountDown, EndGameWidget);
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, 1, true);
+		bGameRunning = false;
 	}
-	FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this, &AToonTankGameModeBase::EndGameCountDown, EndGameWidget);
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, 1, true);
 }
 
 void AToonTankGameModeBase::EndGameCountDown(UEndGameWidget* Widget)
@@ -120,7 +142,7 @@ void AToonTankGameModeBase::EndGameCountDown(UEndGameWidget* Widget)
 		World->GetTimerManager().ClearTimer(TimerHandle);
 		UWidgetLayoutLibrary::RemoveAllWidgets(this);
 
-		FString Options = FString::Printf(TEXT("%s=%d"), TEXT(LEVEL_KEY), CurrentLevel);
+		FString Options = FString::Printf(TEXT("%s=%d?%s=%f"), TEXT(LEVEL_KEY), CurrentLevel, TEXT(SCORE_KEY), Score);
 		UGameplayStatics::OpenLevel(this, FName("/Game/Maps/Main"), true, Options);
 	}
 }
@@ -166,10 +188,6 @@ void AToonTankGameModeBase::BuildArena()
 			{
 				Right->HideWall();
 			}
-			if (bVPath && bHPath)
-			{
-				Corner->HideWall();
-			}
 
 			if (!(r == 0 && c == 0) && FMath::RandRange(0, 1) < EnemyRate)
 			{
@@ -179,13 +197,14 @@ void AToonTankGameModeBase::BuildArena()
 		}
 		Location.X += BlockSize;
 	}
+	Location.X -= BlockSize;
 
 	if (EnemyCount <= 0)
 	{
-		Location.X -= BlockSize;
 		World->SpawnActor<ATower>(EnemyClass, Location, FRotator::ZeroRotator);
 		EnemyCount++;
 	}
+	World->SpawnActor<AGoalTrigger>(GoalTriggerClass, Location, FRotator::ZeroRotator);
 
 	FString MazeString(TEXT("Maze:\n\n"));
 	MazeString.Append(MazeGenerator.MazeString());

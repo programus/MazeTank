@@ -9,9 +9,11 @@
 class ABasePawn;
 class ATower;
 class AWall;
+class AGoalTrigger;
 class UUserWidget;
 class ATankPlayerController;
 class UStartGameWidget;
+class UGameRunningWidget;
 class UEndGameWidget;
 struct FTimerHandle;
 
@@ -26,6 +28,8 @@ class TOONTANK_API AToonTankGameModeBase : public AGameModeBase
 public:
 
 	void KillActor(AActor* Actor);
+
+	void EndGame(bool bWin);
 
 protected:
 	virtual void BeginPlay() override;
@@ -44,8 +48,16 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Game Settings")
 		TSubclassOf<UUserWidget> StartGameWidgetClass;
 	UPROPERTY(EditAnywhere, Category = "Game Settings")
+		TSubclassOf<UUserWidget> GameRunningWidgetClass;
+	UPROPERTY(EditAnywhere, Category = "Game Settings")
 		TSubclassOf<UUserWidget> EndGameWidgetClass;
+	UPROPERTY(EditAnywhere, Category = "Game Settings")
+		float KillScore = 10;
+	UPROPERTY(EditAnywhere, Category = "Game Settings")
+		float LevelScoreFactor = 50;
 
+	UPROPERTY(EditAnywhere, Category = "Arena")
+		TSubclassOf<AGoalTrigger> GoalTriggerClass;
 	UPROPERTY(EditAnywhere, Category = "Arena")
 		TSubclassOf<AWall> EmptyArea;
 	UPROPERTY(EditAnywhere, Category = "Arena")
@@ -70,14 +82,21 @@ private:
 	UPROPERTY()
 	UStartGameWidget* StartGameWidget;
 	UPROPERTY()
+	UGameRunningWidget* GameRunningWidget;
+	UPROPERTY()
 	UEndGameWidget* EndGameWidget;
 
+	AGoalTrigger* GoalTrigger;
+
 	int32 EnemyCount;
+
+	float Score;
+
+	bool bGameRunning = true;
 
 	void StartGame();
 	void StartGameCountDown(ATankPlayerController* Controller, UStartGameWidget* Widget);
 
-	void EndGame(bool bWin);
 	void EndGameCountDown(UEndGameWidget* Widget);
 
 	void BuildArena();

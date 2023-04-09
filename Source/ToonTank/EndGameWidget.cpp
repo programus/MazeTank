@@ -18,3 +18,8 @@ void UEndGameWidget::SetCountDown(int32 Seconds)
 {
 	CountDown->SetText(FText::Format(FTextFormat::FromString("{0}"), Seconds));
 }
+
+void UEndGameWidget::SetScoreValue(float Score)
+{
+	ScoreValue->SetText(FText::FromString(FString::FromInt(FMath::CeilToInt(Score * 10))));
+}

@@ -19,6 +19,7 @@ public:
 	void SetTitle(FText Value);
 	void SetLevelDescription(FText Value);
 	void SetCountDown(int32 Seconds);
+	void SetScoreValue(float Score);
 	
 private:
 	UPROPERTY(meta = (BindWidget))
@@ -27,4 +28,6 @@ private:
 		UTextBlock* LevelDescription;
 	UPROPERTY(meta = (BindWidget))
 		UTextBlock* CountDown;
+	UPROPERTY(meta = (BindWidget))
+		UTextBlock* ScoreValue;
 };
